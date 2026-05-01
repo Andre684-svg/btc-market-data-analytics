@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTC/USD Live Price</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .card {
+      background: #111827;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 30px;
+      width: 360px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #f7931a;
+    }
+
+    .price {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 10px 0;
+      color: #cbd5e1;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .green {
+      color: #22c55e;
+    }
+
+    .red {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>BTC/USD Live</h1>
+
+    <div class="price" id="price">Loading...</div>
+
+    <div class="row">
+      <span>Bid:</span>
+      <span id="bid">—</span>
+    </div>
+
+    <div class="row">
+      <span>Ask:</span>
+      <span id="ask">—</span>
+    </div>
+
+    <div class="row">
+      <span>Mid:</span>
+      <span id="mid">—</span>
+    </div>
+
+    <div class="row">
+      <span>Time:</span>
+      <span id="time">—</span>
+    </div>
+
+    <div class="status" id="status">Connecting to Coinbase WebSocket...</div>
+  </div>
+
+  <script>
+    const priceEl = document.getElementById("price");
+    const bidEl = document.getElementById("bid");
+    const askEl = document.getElementById("ask");
+    const midEl = document.getElementById("mid");
+    const timeEl = document.getElementById("time");
+    const statusEl = document.getElementById("status");
+
+    let lastPrice = null;
+
+    function formatUsd(value) {
+      return Number(value).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function connect() {
+      const ws = new WebSocket("wss://ws-feed.exchange.coinbase.com");
+
+      ws.onopen = () => {
+        statusEl.textContent = "Connected. Waiting for BTC/USD data...";
+        statusEl.className = "status green";
+
+        ws.send(JSON.stringify({
+          type: "subscribe",
+          product_ids: ["BTC-USD"],
+          channels: ["ticker"]
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "ticker" && data.product_id === "BTC-USD") {
+          const price = Number(data.price);
+          const bid = Number(data.best_bid);
+          const ask = Number(data.best_ask);
+          const mid = (bid + ask) / 2;
+
+          if (lastPrice !== null) {
+            if (price > lastPrice) {
+              priceEl.className = "price green";
+            } else if (price < lastPrice) {
+              priceEl.className = "price red";
+            }
+          }
+
+          lastPrice = price;
+
+          priceEl.textContent = formatUsd(price);
+          bidEl.textContent = formatUsd(bid);
+          askEl.textContent = formatUsd(ask);
+          midEl.textContent = formatUsd(mid);
+          timeEl.textContent = new Date().toLocaleTimeString();
+
+          statusEl.textContent = "Live BTC/USD price from Coinbase";
+          statusEl.className = "status green";
+        }
+      };
+
+      ws.onerror = () => {
+        statusEl.textContent = "WebSocket error";
+        statusEl.className = "status red";
+      };
+
+      ws.onclose = () => {
+        statusEl.textContent = "Disconnected. Reconnecting in 3 seconds...";
+        statusEl.className = "status red";
+
+        setTimeout(connect, 3000);
+      };
+    }
+
+    connect();
+  </script>
+</body>
+</html>
