@@ -3,102 +3,255 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BTC/USD Live Price</title>
+  <title>BTC Polymarket Chainlink Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
       margin: 0;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 24px;
     }
 
     .card {
       background: #111827;
       border: 1px solid #334155;
       border-radius: 16px;
-      padding: 30px;
-      width: 360px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    h1, h2 {
+      margin-top: 0;
     }
 
     h1 {
-      margin-top: 0;
       color: #f7931a;
     }
 
     .price {
-      font-size: 36px;
+      font-size: 44px;
       font-weight: bold;
-      margin: 20px 0;
+      margin: 14px 0;
+    }
+
+    .up {
+      color: #22c55e;
+    }
+
+    .down {
+      color: #ef4444;
+    }
+
+    .neutral {
+      color: #eab308;
     }
 
     .row {
       display: flex;
       justify-content: space-between;
-      margin: 10px 0;
+      border-bottom: 1px solid #1f2937;
+      padding: 11px 0;
+      gap: 16px;
+    }
+
+    .row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
       color: #cbd5e1;
     }
 
+    .value {
+      font-weight: bold;
+      text-align: right;
+    }
+
+    input {
+      width: 180px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #020617;
+      color: white;
+      font-size: 16px;
+      text-align: right;
+    }
+
+    button {
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
     .status {
-      margin-top: 20px;
-      font-size: 14px;
+      margin-top: 16px;
       color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.45;
     }
 
-    .green {
-      color: #22c55e;
+    .small {
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.45;
     }
 
-    .red {
-      color: #ef4444;
+    .links a {
+      color: #60a5fa;
+      text-decoration: none;
+    }
+
+    .links a:hover {
+      text-decoration: underline;
+    }
+
+    iframe {
+      max-width: 100%;
+      border-radius: 12px;
+    }
+
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>BTC/USD Live</h1>
+  <div class="container">
+    <div class="card">
+      <h1>BTC Polymarket / Chainlink Tracker</h1>
 
-    <div class="price" id="price">Loading...</div>
+      <div class="small">
+        Polymarket BTC Up/Down рынки рассчитываются по Chainlink BTC/USD Data Stream,
+        а не напрямую по Binance/Coinbase/Kraken.
+      </div>
 
-    <div class="row">
-      <span>Bid:</span>
-      <span id="bid">—</span>
+      <div class="price" id="indexPrice">Loading...</div>
+
+      <div class="row">
+        <span class="label">Start / Target price</span>
+        <span class="value">
+          <input id="startPriceInput" type="number" step="0.01" value="78372.36" />
+          <button onclick="saveStartPrice()">Save</button>
+        </span>
+      </div>
+
+      <div class="row">
+        <span class="label">Difference from start</span>
+        <span class="value" id="difference">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Estimated result</span>
+        <span class="value" id="result">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Coinbase BTC-USD</span>
+        <span class="value" id="coinbase">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Kraken XBT/USD</span>
+        <span class="value" id="kraken">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Bitstamp BTC/USD</span>
+        <span class="value" id="bitstamp">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Binance BTC/USDT</span>
+        <span class="value" id="binance">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Exchange spread</span>
+        <span class="value" id="spread">—</span>
+      </div>
+
+      <div class="row">
+        <span class="label">Last update</span>
+        <span class="value" id="time">—</span>
+      </div>
+
+      <div class="status" id="status">Loading market data...</div>
+
+      <div class="status links">
+        Chainlink source:
+        <a href="https://data.chain.link/streams/btc-usd" target="_blank" rel="noopener">
+          https://data.chain.link/streams/btc-usd
+        </a>
+      </div>
     </div>
 
-    <div class="row">
-      <span>Ask:</span>
-      <span id="ask">—</span>
-    </div>
+    <div class="card">
+      <h2>Polymarket Embed</h2>
 
-    <div class="row">
-      <span>Mid:</span>
-      <span id="mid">—</span>
-    </div>
+      <iframe
+        title="Bitcoin Up or Down — Polymarket Prediction Market"
+        src="https://embed.polymarket.com/market?market=btc-updown-5m-1777663200&theme=dark&height=300"
+        width="400"
+        height="300"
+        frameborder="0"
+        allowtransparency="true">
+      </iframe>
 
-    <div class="row">
-      <span>Time:</span>
-      <span id="time">—</span>
+      <div class="status">
+        Важно: этот embed привязан к конкретному рынку.
+        Для нового 5-минутного рынка нужно заменить market ID.
+      </div>
     </div>
-
-    <div class="status" id="status">Connecting to Coinbase WebSocket...</div>
   </div>
 
   <script>
-    const priceEl = document.getElementById("price");
-    const bidEl = document.getElementById("bid");
-    const askEl = document.getElementById("ask");
-    const midEl = document.getElementById("mid");
+    const indexPriceEl = document.getElementById("indexPrice");
+    const startPriceInput = document.getElementById("startPriceInput");
+    const differenceEl = document.getElementById("difference");
+    const resultEl = document.getElementById("result");
+    const coinbaseEl = document.getElementById("coinbase");
+    const krakenEl = document.getElementById("kraken");
+    const bitstampEl = document.getElementById("bitstamp");
+    const binanceEl = document.getElementById("binance");
+    const spreadEl = document.getElementById("spread");
     const timeEl = document.getElementById("time");
     const statusEl = document.getElementById("status");
 
-    let lastPrice = null;
+    let lastIndexPrice = null;
+
+    const savedStartPrice = localStorage.getItem("btcStartPrice");
+    if (savedStartPrice) {
+      startPriceInput.value = savedStartPrice;
+    }
+
+    function saveStartPrice() {
+      localStorage.setItem("btcStartPrice", startPriceInput.value);
+    }
 
     function formatUsd(value) {
-      return Number(value).toLocaleString("en-US", {
+      if (!Number.isFinite(value)) return "—";
+
+      return value.toLocaleString("en-US", {
         style: "currency",
         currency: "USD",
         minimumFractionDigits: 2,
@@ -106,64 +259,151 @@
       });
     }
 
-    function connect() {
-      const ws = new WebSocket("wss://ws-feed.exchange.coinbase.com");
+    function median(values) {
+      const sorted = values
+        .filter(v => Number.isFinite(v))
+        .sort((a, b) => a - b);
 
-      ws.onopen = () => {
-        statusEl.textContent = "Connected. Waiting for BTC/USD data...";
-        statusEl.className = "status green";
+      if (sorted.length === 0) return null;
 
-        ws.send(JSON.stringify({
-          type: "subscribe",
-          product_ids: ["BTC-USD"],
-          channels: ["ticker"]
-        }));
-      };
+      const mid = Math.floor(sorted.length / 2);
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+      if (sorted.length % 2 === 0) {
+        return (sorted[mid - 1] + sorted[mid]) / 2;
+      }
 
-        if (data.type === "ticker" && data.product_id === "BTC-USD") {
-          const price = Number(data.price);
-          const bid = Number(data.best_bid);
-          const ask = Number(data.best_ask);
-          const mid = (bid + ask) / 2;
-
-          if (lastPrice !== null) {
-            if (price > lastPrice) {
-              priceEl.className = "price green";
-            } else if (price < lastPrice) {
-              priceEl.className = "price red";
-            }
-          }
-
-          lastPrice = price;
-
-          priceEl.textContent = formatUsd(price);
-          bidEl.textContent = formatUsd(bid);
-          askEl.textContent = formatUsd(ask);
-          midEl.textContent = formatUsd(mid);
-          timeEl.textContent = new Date().toLocaleTimeString();
-
-          statusEl.textContent = "Live BTC/USD price from Coinbase";
-          statusEl.className = "status green";
-        }
-      };
-
-      ws.onerror = () => {
-        statusEl.textContent = "WebSocket error";
-        statusEl.className = "status red";
-      };
-
-      ws.onclose = () => {
-        statusEl.textContent = "Disconnected. Reconnecting in 3 seconds...";
-        statusEl.className = "status red";
-
-        setTimeout(connect, 3000);
-      };
+      return sorted[mid];
     }
 
-    connect();
+    async function getCoinbase() {
+      const res = await fetch("https://api.exchange.coinbase.com/products/BTC-USD/ticker");
+      const data = await res.json();
+
+      const bid = Number(data.bid);
+      const ask = Number(data.ask);
+      const price = Number(data.price);
+
+      if (Number.isFinite(bid) && Number.isFinite(ask)) {
+        return (bid + ask) / 2;
+      }
+
+      return price;
+    }
+
+    async function getKraken() {
+      const res = await fetch("https://api.kraken.com/0/public/Ticker?pair=XBTUSD");
+      const data = await res.json();
+
+      const pairKey = Object.keys(data.result)[0];
+      const ticker = data.result[pairKey];
+
+      const bid = Number(ticker.b[0]);
+      const ask = Number(ticker.a[0]);
+      const last = Number(ticker.c[0]);
+
+      if (Number.isFinite(bid) && Number.isFinite(ask)) {
+        return (bid + ask) / 2;
+      }
+
+      return last;
+    }
+
+    async function getBitstamp() {
+      const res = await fetch("https://www.bitstamp.net/api/v2/ticker/btcusd/");
+      const data = await res.json();
+
+      const bid = Number(data.bid);
+      const ask = Number(data.ask);
+      const last = Number(data.last);
+
+      if (Number.isFinite(bid) && Number.isFinite(ask)) {
+        return (bid + ask) / 2;
+      }
+
+      return last;
+    }
+
+    async function getBinance() {
+      const res = await fetch("https://api.binance.com/api/v3/ticker/bookTicker?symbol=BTCUSDT");
+      const data = await res.json();
+
+      const bid = Number(data.bidPrice);
+      const ask = Number(data.askPrice);
+
+      if (Number.isFinite(bid) && Number.isFinite(ask)) {
+        return (bid + ask) / 2;
+      }
+
+      return null;
+    }
+
+    async function updatePrices() {
+      const results = await Promise.allSettled([
+        getCoinbase(),
+        getKraken(),
+        getBitstamp(),
+        getBinance()
+      ]);
+
+      const coinbase = results[0].status === "fulfilled" ? results[0].value : null;
+      const kraken = results[1].status === "fulfilled" ? results[1].value : null;
+      const bitstamp = results[2].status === "fulfilled" ? results[2].value : null;
+      const binance = results[3].status === "fulfilled" ? results[3].value : null;
+
+      coinbaseEl.textContent = formatUsd(coinbase);
+      krakenEl.textContent = formatUsd(kraken);
+      bitstampEl.textContent = formatUsd(bitstamp);
+      binanceEl.textContent = formatUsd(binance);
+
+      const validPrices = [coinbase, kraken, bitstamp, binance].filter(v => Number.isFinite(v));
+
+      if (validPrices.length >= 2) {
+        const indexPrice = median(validPrices);
+        const minPrice = Math.min(...validPrices);
+        const maxPrice = Math.max(...validPrices);
+        const spread = maxPrice - minPrice;
+
+        if (lastIndexPrice !== null) {
+          if (indexPrice > lastIndexPrice) {
+            indexPriceEl.className = "price up";
+          } else if (indexPrice < lastIndexPrice) {
+            indexPriceEl.className = "price down";
+          } else {
+            indexPriceEl.className = "price neutral";
+          }
+        }
+
+        lastIndexPrice = indexPrice;
+
+        indexPriceEl.textContent = formatUsd(indexPrice);
+        spreadEl.textContent = formatUsd(spread);
+
+        const startPrice = Number(startPriceInput.value);
+        const diff = indexPrice - startPrice;
+
+        differenceEl.textContent = `${diff >= 0 ? "+" : ""}${diff.toFixed(2)} USD`;
+
+        if (diff >= 0) {
+          resultEl.textContent = "Estimated UP";
+          resultEl.className = "value up";
+          differenceEl.className = "value up";
+        } else {
+          resultEl.textContent = "Estimated DOWN";
+          resultEl.className = "value down";
+          differenceEl.className = "value down";
+        }
+
+        timeEl.textContent = new Date().toLocaleTimeString();
+
+        statusEl.textContent = `Live estimate from ${validPrices.length} exchange sources. Exact Polymarket resolution uses Chainlink BTC/USD Data Stream.`;
+        statusEl.className = "status";
+      } else {
+        statusEl.textContent = "Not enough exchange data.";
+      }
+    }
+
+    updatePrices();
+    setInterval(updatePrices, 1000);
   </script>
 </body>
 </html>
